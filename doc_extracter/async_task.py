@@ -110,33 +110,25 @@ class AsyncTask(object):
 
         try:
             # await backend.produce(self.queue)
-            loop.create_task(backend.produce(self.queue))
-            await self.consume()
+            producers = [loop.create_task(backend.produce(self.queue))]
+            consumers = [loop.create_task(backend.consume(self.queue, self.process)) for _ in range(self.workers)]
+            await asyncio.gather(*producers, *consumers)
+            await self.queue.join()
         finally:
             await es.close()
 
         cost = (time.time()) - start
         logger.info(f"任务结束。时间: {cost} s")
 
-    async def consume(self):
+    async def process(self, tasks: List[dict]):
         loop = asyncio.get_event_loop()
-        chunks = []
-        while True:
-            while not self.queue.empty():
-                task = await self.queue.get()
-                result = await loop.run_in_executor(self.executor, self.process, task)
-                chunks.append(result)
-                if len(chunks) == self.CHUNK_SIZE:
-                    await self.handle_result(chunks)
-                    chunks = []
-        
-            if chunks:
-                await self.handle_result(chunks)
-                chunks = []
+        results = []
+        for task in tasks:
+            result = await loop.run_in_executor(self.executor, self._process, task)
+            results.append(result)
+        await self.handle_result(results)
 
-            await asyncio.sleep(0.001)
-
-    def process(self, task: dict):
+    def _process(self, task: dict):
         """ 处理消息
 
         Args:

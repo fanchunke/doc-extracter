@@ -11,7 +11,7 @@ import glob
 import hashlib
 import itertools
 import os
-from typing import List
+from typing import List, Callable, Coroutine, Any
 
 from . import Backend
 
@@ -44,3 +44,8 @@ class FileBackend(Backend):
 
             }
             await queue.put(data)
+
+    async def consume(self, queue: asyncio.Queue, callback: Callable[..., Coroutine[Any, Any, Any]]):
+        while True:
+            task = await queue.get()
+            await callback([task])

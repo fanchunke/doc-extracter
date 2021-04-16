@@ -8,10 +8,15 @@
 
 from abc import ABC, abstractmethod
 import asyncio
+from typing import Callable, Coroutine, Any
 
 
 class Backend(ABC):
 
     @abstractmethod
-    def produce(self, queue: asyncio.Queue):
+    async def produce(self, queue: asyncio.Queue):
+        ...
+
+    @abstractmethod
+    async def consume(self, queue: asyncio.Queue, callback: Callable[..., Coroutine[Any, Any, Any]]):
         ...

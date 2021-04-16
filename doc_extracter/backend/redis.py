@@ -8,7 +8,7 @@
 
 import asyncio
 import json
-from typing import Iterator
+from typing import Iterator, Callable, Coroutine, Any
 
 import aioredis
 
@@ -23,9 +23,10 @@ class RedisBackend(Backend):
         self.pool = pool
 
     async def produce(self, queue: asyncio.Queue):
+        return
+
+    async def consume(self, queue: asyncio.Queue, callback: Callable[..., Coroutine[Any, Any, Any]]):
         while True:
-            item = await self.pool.rpop(self.POP_KEY)
-            if item:
-                await queue.put(json.loads(item))
-            else:
-                await asyncio.sleep(0.001)
+            task = await self.pool.brpop(self.POP_KEY)
+            task = json.loads(task[-1])
+            await callback([task])
