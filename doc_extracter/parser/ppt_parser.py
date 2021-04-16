@@ -23,7 +23,7 @@ logger = logging.getLogger()
 class Parser(object):
 
     @staticmethod
-    def extract(filename: str, **kwargs):
+    def extract(filename: str, owner: str, **kwargs):
         """ 解析文本
 
         Args:
@@ -50,7 +50,7 @@ class Parser(object):
         app = presentation = None
 
         try:
-            data = PPTXParser.extract(pptx_filename)
+            data = PPTXParser.extract(pptx_filename, owner)
         except Exception as e:
             logger.exception(e)
             raise

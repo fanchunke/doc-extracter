@@ -39,6 +39,8 @@ class FileBackend(Backend):
                 "name": os.path.basename(file),
                 "path": file,
                 "ext": f".{file.split('.')[-1]}",
-                "state": 0
+                "state": 0,
+                "owner": file.split("-")[0]
+
             }
             await queue.put(data)

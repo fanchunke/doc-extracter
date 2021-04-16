@@ -163,16 +163,17 @@ class AsyncTask(object):
         file_id = task.get("id")
         filename = task.get("path")
         ext = task.get("ext")
+        owner = task.get("owner")
         try:
             if ext == ".pptx":
-                body = PPTXParser.extract(filename)
+                body = PPTXParser.extract(filename, owner)
             elif ext == ".ppt":
                 if PPTParser is None:
                     logger.warning(f"当前操作系统不支持 .ppt 后缀文件: {filename}")
                     return
-                body = PPTParser.extract(filename)
+                body = PPTParser.extract(filename, owner)
             elif ext == ".docx":
-                body = DocxParser.extract(filename)
+                body = DocxParser.extract(filename, owner)
             else:
                 raise Exception(f"UnSupported: {filename}")
 

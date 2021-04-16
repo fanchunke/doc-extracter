@@ -21,7 +21,7 @@ logger = logging.getLogger()
 class Parser(object):
 
     @staticmethod
-    def extract(filename: str, **kwargs):
+    def extract(filename: str, owner: str, **kwargs):
         """ 解析文本
 
         Args:
@@ -50,7 +50,7 @@ class Parser(object):
         logger.info(f"处理结束: {filename}, 时间: {cost} s")
 
         data = {
-            "owner": os.path.basename(filename).split("-")[0],
+            "owner": owner,
             "file": filename,
             "file_type": get_file_extension(filename),
             "section": section,
