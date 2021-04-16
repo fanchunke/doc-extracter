@@ -6,15 +6,26 @@
 # @Email       :   fanchunke@laiye.com
 # @Description :   
 
-from . import Backend
-
+import asyncio
+import json
 from typing import Iterator
+
+import aioredis
+
+from . import Backend
 
 
 class RedisBackend(Backend):
 
-    def __init__(self, chunk_size) -> None:
-        super().__init__()
+    POP_KEY = "pub_queue"
 
-    def get_tasks(self) -> Iterator:
-        return super().get_tasks()
+    def __init__(self, pool: aioredis.Redis) -> None:
+        self.pool = pool
+
+    async def produce(self, queue: asyncio.Queue):
+        while True:
+            item = await self.pool.rpop(self.POP_KEY)
+            if item:
+                await queue.put(json.loads(item))
+            else:
+                await asyncio.sleep(0.001)

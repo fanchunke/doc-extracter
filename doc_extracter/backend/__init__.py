@@ -7,11 +7,11 @@
 # @Description :   
 
 from abc import ABC, abstractmethod
-from typing import Iterator
+import asyncio
 
 
 class Backend(ABC):
 
     @abstractmethod
-    def get_tasks(self) -> Iterator:
+    def produce(self, queue: asyncio.Queue):
         ...

@@ -6,14 +6,15 @@
 # @Email       :   fanchunke@laiye.com
 # @Description :   
 
+import asyncio
 import logging
 import logging.config
 
 import click
 
+from doc_extracter.async_task import AsyncTask
 from doc_extracter.command import OptionRequiredIf
 from doc_extracter.logger import LOGGING
-from doc_extracter.task import Task
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 @click.option(
     '--backend',
     help="获取文件的方式",
-    type=click.Choice(["files", "http"])
+    type=click.Choice(["files", "http", "redis"])
 )
 @click.option(
     '--type',
@@ -55,8 +56,18 @@ logger = logging.getLogger(__name__)
 )
 def doc_extracter(type, backend, dirname, url, workers):
     logger.info(f"backend: {backend}, type: {type}, dirname: {dirname}, url: {url}, workers: {workers}")
-    task = Task(type, backend, dirname, url, workers)
-    task.run()
+    loop = asyncio.get_event_loop()
+    try:
+        asyncio.run(main(type, backend, dirname, url, workers))
+    except KeyboardInterrupt as e:
+        logger.info("Caught keyboard interrupt. Canceling tasks...")
+    finally:
+        loop.close()
+
+
+async def main(type, backend, dirname, url, workers):
+    async with AsyncTask(type, backend, dirname, url, workers) as t:
+        await t.run()
 
 
 if __name__ == '__main__':

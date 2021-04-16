@@ -6,25 +6,46 @@
 # @Email       :   fanchunke@laiye.com
 # @Description :   
 
-from elasticsearch import Elasticsearch
+from elasticsearch import AsyncElasticsearch
+import aioredis
 
 
-def create_index(client: Elasticsearch):
+es = AsyncElasticsearch(hosts=[{"host": "172.17.201.207", "port": 9200}])
+
+
+async def create_index(client: AsyncElasticsearch):
     """Creates an index in Elasticsearch if one isn't already there."""
-    client.indices.create(
-        index="docs",
+    index = "dahua-docs"
+    exists = await client.indices.exists(index)
+    if exists:
+        return
+    await client.indices.create(
+        index=index,
         body={
-            # "settings": {"number_of_shards": 1},
-            "mappings": {
-                "properties": {
-                    "owner": {"type": "keyword"},
-                    "file_type": {"type": "keyword"},
-                }
+            'settings': {
+                'number_of_shards': 1,
+                'number_of_replicas': 1,
+            },
+            'mappings': {
+                'properties': {
+                    'owner': {'type': 'keyword'},
+                    'file': {'type': 'text', 'analyzer': 'jieba_index'},
+                    'file_type': {'type': 'keyword', 'index': False},
+                    'date': {'type': 'date', "format": "yyyy-MM-dd",
+                            'index': False},
+                    'section': {
+                        'type': 'nested',
+                        'properties': {
+                            'page': {'type': 'integer', 'index': False},
+                            'context': {'type': 'text', 'analyzer': 'jieba_index'},
+                        }
+                    }
+                },
             },
         },
-        ignore=400,
     )
 
-es = Elasticsearch(hosts=[{"host": "172.17.201.207", "port": 9200}])
-create_index(es)
-print(es.count())
+
+async def create_pool() -> aioredis.Redis:
+    pool = await aioredis.create_redis_pool("redis://localhost:6379", db=0, encoding="utf-8")
+    return pool

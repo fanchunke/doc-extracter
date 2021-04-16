@@ -6,10 +6,12 @@
 # @Email       :   fanchunke@laiye.com
 # @Description :   
 
+import asyncio
 import glob
+import hashlib
 import itertools
 import os
-from typing import Iterator, List
+from typing import List
 
 from . import Backend
 
@@ -20,7 +22,7 @@ class FileBackend(Backend):
         self.dirname = dirname
         self.supported_extensions = supported_extensions
 
-    def get_tasks(self) -> Iterator:
+    async def produce(self, queue: asyncio.Queue):
         if not os.path.exists(self.dirname):
             raise Exception(f"目录不存在: {self.dirname}")
 
@@ -30,5 +32,13 @@ class FileBackend(Backend):
                 files,
                 glob.iglob(os.path.join(self.dirname, "**", f"*{file_type}"), recursive=True)
             )
-        
-        return files
+
+        for file in files:
+            data = {
+                "id": hashlib.md5(file.encode("utf-8")).hexdigest(),
+                "name": os.path.basename(file),
+                "path": file,
+                "ext": f".{file.split('.')[-1]}",
+                "state": 0
+            }
+            await queue.put(data)
