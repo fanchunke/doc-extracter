@@ -38,6 +38,9 @@ class Parser(object):
         if not filename.endswith(".ppt"):
             raise Exception(f"Unsupported file: {filename}")
 
+        if not os.path.exists(filename):
+            raise Exception(f"Not Found: {filename}")
+
         app = win32com.client.Dispatch("PowerPoint.Application")
         presentation = app.Presentations.Open(filename, WithWindow=False)
 

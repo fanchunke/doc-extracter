@@ -36,6 +36,9 @@ class Parser(object):
         if not filename.endswith(".pptx"):
             raise Exception(f"Unsupported file: {filename}")
 
+        if not os.path.exists(filename):
+            raise Exception(f"Not Found: {filename}")
+
         start = time.time()
         logger.info(f"开始处理: {filename}")
         presentation = pptx.Presentation(filename)

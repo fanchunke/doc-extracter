@@ -25,6 +25,7 @@ from .backend.redis import RedisBackend
 from .extensions import create_index, create_pool, es
 from .parser.docx_parser import Parser as DocxParser
 from .parser.pptx_parser import Parser as PPTXParser
+from .errors import UnSupportedError
 
 try:
     from .parser.ppt_parser import Parser as PPTParser
@@ -175,11 +176,15 @@ class AsyncTask(object):
             elif ext == ".docx":
                 body = DocxParser.extract(filename, owner)
             else:
-                raise Exception(f"UnSupported: {filename}")
+                raise UnSupportedError(f"UnSupported: {filename}")
 
             # state=1 处理成功
             result = {"state": 1, "body": body, "id": file_id}
 
+        except UnSupportedError as e:
+            logger.error(e)
+            # state=2 不支持的类型
+            result = {"state": -1, "body": {}, "id": file_id}
         except Exception as e:
             logger.exception(e)
             # state=2 处理失败
@@ -191,9 +196,9 @@ class AsyncTask(object):
         # 数据写入 ES
         actions = []
         for item in data:
-            if item.get("state") == 2:
-                continue
             body = item.get("body") or {}
+            if not body:
+                continue
             actions.append({
                 "_index": "dahua-docs",
                 "_id": item.get("id"),
@@ -204,6 +209,7 @@ class AsyncTask(object):
 
         # 处理结果写入 redis 队列
         for item in data:
+            if item.get("state") == -1:
+                continue
             value = {"id": item.get("id"), "state": item.get("state")}
             await self.pool.lpush(self.PUSH_KEY, json.dumps(value))
-

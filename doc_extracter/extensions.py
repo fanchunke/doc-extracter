@@ -36,7 +36,7 @@ async def create_index(client: AsyncElasticsearch):
                     'section': {
                         'type': 'nested',
                         'properties': {
-                            'page': {'type': 'integer', 'index': False},
+                            'page': {'type': 'text', 'index': False},
                             'context': {'type': 'text', 'analyzer': 'jieba_index'},
                         }
                     }
