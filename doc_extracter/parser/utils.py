@@ -17,7 +17,7 @@ def get_create_time(filename: str) -> str:
         raise Exception(f"文件不存在")
 
     ctime = datetime.datetime.fromtimestamp(fname.stat().st_ctime)
-    ctime = ctime.strftime("%Y-%m-%d")
+    ctime = ctime.strftime("%Y-%m-%d %H:%M:%S")
     return ctime
 
 

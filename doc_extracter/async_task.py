@@ -7,13 +7,11 @@
 # @Description :   
 
 import asyncio
-import functools
-import hashlib
 import json
 import logging
-import operator
 import time
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import asdict
 from typing import Dict, List, Optional
 
 import aioredis
@@ -22,10 +20,10 @@ from elasticsearch import helpers
 from .backend.file import FileBackend
 from .backend.http import HTTPBackend
 from .backend.redis import RedisBackend
+from .errors import UnSupportedError
 from .extensions import create_index, create_pool, es
 from .parser.docx_parser import Parser as DocxParser
 from .parser.pptx_parser import Parser as PPTXParser
-from .errors import UnSupportedError
 
 try:
     from .parser.ppt_parser import Parser as PPTParser
@@ -34,18 +32,14 @@ except:
 
 logger = logging.getLogger()
 
-SUPPORTED_EXTENSIONS = {
-    "pptx": [".pptx"],
-    "docx": [".docx"],
-}
 
-SUPPORTED_BACKEND = ["files", "http", "redis"]
+from . import SUPPORTED_BACKEND, SUPPORTED_EXTENSIONS, Message
 
 
 class AsyncTask(object):
 
     CHUNK_SIZE = 100
-    PUSH_KEY = "sub_queue"
+    RESULT_KEY = "result_queue"
 
     def __init__(
         self,
@@ -83,16 +77,17 @@ class AsyncTask(object):
 
     async def setup(self):
         await create_index(es)
-        self.pool = await create_pool()
+        if not self.pool:
+            self.pool = await create_pool()
 
     async def run(self):
 
         if self.supported_type == "all":
-            supported_extensions = functools.reduce(operator.iconcat, SUPPORTED_EXTENSIONS.values(), [])
-        else:
-            supported_extensions = SUPPORTED_EXTENSIONS.get(self.supported_type)
-        if not supported_extensions:
+            supported_extensions = SUPPORTED_EXTENSIONS
+        elif self.supported_type not in SUPPORTED_EXTENSIONS:
             raise Exception(f"文件扩展不支持: {self.supported_type}")
+        else:
+            supported_extensions = [self.supported_type]
 
         supported_extensions = list(set(supported_extensions))
 
@@ -101,42 +96,40 @@ class AsyncTask(object):
         elif self.backend == "http":
             backend = HTTPBackend(self.url)
         elif self.backend == "redis":
-            backend = RedisBackend(self.pool)
+            backend = RedisBackend(self.pool, supported_extensions)
 
-        logger.info(f"开始任务，线程数: {self.workers}")
+        logger.info(f"开始任务，worker 数: {self.workers}")
         start = time.time()
 
         loop = asyncio.get_event_loop()
 
-        try:
-            # await backend.produce(self.queue)
-            producers = [loop.create_task(backend.produce(self.queue))]
-            consumers = [loop.create_task(backend.consume(self.queue, self.process)) for _ in range(self.workers)]
-            await asyncio.gather(*producers, *consumers)
-            await self.queue.join()
-        finally:
-            await es.close()
+        producers = [loop.create_task(backend.produce(self.queue))]
+        consumers = [loop.create_task(backend.consume(self.queue, self.process)) for _ in range(self.workers)]
+        await asyncio.gather(*producers, *consumers)
+        await self.queue.join()
 
         cost = (time.time()) - start
         logger.info(f"任务结束。时间: {cost} s")
 
-    async def process(self, tasks: List[dict]):
+    async def process(self, task: dict):
         loop = asyncio.get_event_loop()
-        results = []
-        for task in tasks:
-            result = await loop.run_in_executor(self.executor, self._process, task)
-            results.append(result)
-        await self.handle_result(results)
+        try:
+            result = await loop.run_in_executor(self.executor, self._process, Message(**task))
+            await self.handle_result([result])
+            logger.info(f"处理成功。id={task.get('id')}")
+        except Exception as e:
+            logger.error(f"处理失败。id={task.get('id')}, msg={str(e)}")
 
-    def _process(self, task: dict):
+    def _process(self, task: Message):
         """ 处理消息
 
         Args:
-            task (dict): [description]
+            task (Message): [description]
 
         Examples:
             {
                 "id" : "6078f5c55f92aa894f92a427",
+                "owner": 111111,
                 "name" : "rss.xml",
                 "path" : "/Users/Joey/.3T/robo-3t/1.3.1/cache/rss.xml",
                 "ext" : ".xml",
@@ -149,38 +142,44 @@ class AsyncTask(object):
         Returns:
             [type]: [description]
         """
-        state = task.get("state")
-        if state != 0:
-            logger.warning(f"任务处于其他状态，不处理。task: {task}")
+        start = time.time()
+        cost = lambda: time.time() - start
+        logger.info(f"开始处理: {task.path}, id={task.id}")
 
-        file_id = task.get("id")
-        filename = task.get("path")
-        ext = task.get("ext")
-        owner = task.get("owner")
+        if task.state != 0:
+            logger.warning(f"任务处于其他状态，不处理。task: {task}")
+            return
+
+        file_id = task.id
+        filename = task.path
+        ext = task.ext
         try:
             if ext == ".pptx":
-                body = PPTXParser.extract(filename, owner)
+                body = PPTXParser.extract(task)
             elif ext == ".ppt":
                 if PPTParser is None:
                     logger.warning(f"当前操作系统不支持 .ppt 后缀文件: {filename}")
                     return
-                body = PPTParser.extract(filename, owner)
+                body = PPTParser.extract(task)
             elif ext == ".docx":
-                body = DocxParser.extract(filename, owner)
+                body = DocxParser.extract(task)
             else:
                 raise UnSupportedError(f"UnSupported: {filename}")
 
             # state=1 处理成功
-            result = {"state": 1, "body": body, "id": file_id}
+            result = {"state": 1, "body": asdict(body), "id": file_id}
+            logger.info(f"解析成功, id={file_id}, filename={filename}, cost={cost()}")
 
         except UnSupportedError as e:
             logger.error(e)
             # state=2 不支持的类型
             result = {"state": -1, "body": {}, "id": file_id}
+            logger.info(f"文件不支持, id={file_id}, filename={filename}, cost={cost()}")
         except Exception as e:
             logger.exception(e)
             # state=2 处理失败
             result = {"state": 2, "body": {}, "id": file_id}
+            logger.info(f"解析失败, id={file_id}, filename={filename}, cost={cost()}")
 
         return result
 
@@ -204,4 +203,4 @@ class AsyncTask(object):
             if item.get("state") == -1:
                 continue
             value = {"id": item.get("id"), "state": item.get("state")}
-            await self.pool.lpush(self.PUSH_KEY, json.dumps(value))
+            await self.pool.lpush(self.RESULT_KEY, json.dumps(value))

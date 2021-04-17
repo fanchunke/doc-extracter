@@ -8,20 +8,21 @@
 
 import logging
 import os
-import time
 
 import docx
+from doc_extracter import Message, Result
 
+from .base import BaseParser
 from .rules import preprocess_content
 from .utils import get_create_time, get_file_extension
 
 logger = logging.getLogger()
 
 
-class Parser(object):
+class Parser(BaseParser):
 
     @staticmethod
-    def extract(filename: str, owner: str, **kwargs):
+    def extract(message: Message, **kwargs) -> Result:
         """ 解析文本
 
         Args:
@@ -33,14 +34,13 @@ class Parser(object):
         Returns:
             [type]: [description]
         """
+        filename = message.path
         if not filename.endswith(".docx"):
             raise Exception(f"Unsupported file: {filename}")
 
         if not os.path.exists(filename):
             raise Exception(f"Not Found: {filename}")
 
-        start = time.time()
-        logger.info(f"开始处理: {filename}")
         document = docx.Document(filename)
         page = 0
         section = []
@@ -49,15 +49,5 @@ class Parser(object):
                 page += 1
                 section.append({"page": page, "context": paragraph.text})
 
-        cost = time.time() - start
-        logger.info(f"处理结束: {filename}, 时间: {cost} s")
-
-        data = {
-            "owner": owner,
-            "file": filename,
-            "file_type": get_file_extension(filename),
-            "section": section,
-            "date": get_create_time(filename)
-        }
-            
+        data = Parser.postprocess(message, section)
         return data

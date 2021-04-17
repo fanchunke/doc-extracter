@@ -11,7 +11,7 @@ import glob
 import hashlib
 import itertools
 import os
-from typing import List, Callable, Coroutine, Any
+from typing import Any, Callable, Coroutine, List
 
 from . import Backend
 
@@ -27,10 +27,10 @@ class FileBackend(Backend):
             raise Exception(f"目录不存在: {self.dirname}")
 
         files = iter([])
-        for file_type in self.supported_extensions:
+        for ext in self.supported_extensions:
             files = itertools.chain(
                 files,
-                glob.iglob(os.path.join(self.dirname, "**", f"*{file_type}"), recursive=True)
+                glob.iglob(os.path.join(self.dirname, "**", f"*.{ext}"), recursive=True)
             )
 
         for file in files:

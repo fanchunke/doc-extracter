@@ -6,9 +6,9 @@
 # @Email       :   fanchunke@laiye.com
 # @Description :   
 
-from elasticsearch import AsyncElasticsearch
 import aioredis
-
+import aioredis
+from elasticsearch import AsyncElasticsearch
 
 es = AsyncElasticsearch(hosts=[{"host": "172.17.201.207", "port": 9200}])
 
@@ -31,7 +31,7 @@ async def create_index(client: AsyncElasticsearch):
                     'owner': {'type': 'keyword'},
                     'file': {'type': 'text', 'analyzer': 'jieba_index'},
                     'file_type': {'type': 'keyword', 'index': False},
-                    'date': {'type': 'date', "format": "yyyy-MM-dd",
+                    'date': {'type': 'date', "format": "yyyy-MM-dd HH:mm:ss",
                             'index': False},
                     'section': {
                         'type': 'nested',

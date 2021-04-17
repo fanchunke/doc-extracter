@@ -23,13 +23,13 @@ logger = logging.getLogger(__name__)
 @click.option(
     '--backend',
     help="获取文件的方式",
-    type=click.Choice(["files", "http", "redis"])
+    type=click.Choice(["files", "http", "redis"], case_sensitive=False)
 )
 @click.option(
     '--type',
     default="ppt",
     help='处理的文件类型。如果 `--backend=files`，`--type` 为必需参数',
-    type=click.Choice(["pptx", "docx", "all"]),
+    type=click.Choice(["pptx", "docx", "all"], case_sensitive=False),
     option="backend",
     value="files",
     cls=OptionRequiredIf

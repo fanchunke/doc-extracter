@@ -6,9 +6,12 @@
 # @Email       :   fanchunke@laiye.com
 # @Description :   
 
+from doc_extracter.parser.base import BaseParser
 import logging
 import os
 import platform
+
+from doc_extracter import Message, Result
 
 from .pptx_parser import Parser as PPTXParser
 
@@ -20,10 +23,10 @@ else:
 
 logger = logging.getLogger()
 
-class Parser(object):
+class Parser(BaseParser):
 
     @staticmethod
-    def extract(filename: str, owner: str, **kwargs):
+    def extract(message: Message, **kwargs) -> Result:
         """ 解析文本
 
         Args:
@@ -35,6 +38,7 @@ class Parser(object):
         Returns:
             [type]: [description]
         """
+        filename = message.path
         if not filename.endswith(".ppt"):
             raise Exception(f"Unsupported file: {filename}")
 
@@ -53,11 +57,12 @@ class Parser(object):
         app = presentation = None
 
         try:
-            data = PPTXParser.extract(pptx_filename, owner)
+            data = PPTXParser.extract(message)
         except Exception as e:
             logger.exception(e)
             raise
         finally:
             os.remove(pptx_filename)
 
+        data.file = filename
         return data
