@@ -7,10 +7,11 @@
 # @Description :   
 
 import aioredis
-import aioredis
 from elasticsearch import AsyncElasticsearch
 
-es = AsyncElasticsearch(hosts=[{"host": "172.17.201.207", "port": 9200}])
+from .config import settings
+
+es = AsyncElasticsearch(hosts=[{"host": settings.ES_HOST, "port": settings.ES_PORT}])
 
 
 async def create_index(client: AsyncElasticsearch):
@@ -47,5 +48,8 @@ async def create_index(client: AsyncElasticsearch):
 
 
 async def create_pool() -> aioredis.Redis:
-    pool = await aioredis.create_redis_pool("redis://localhost:6379", db=0, encoding="utf-8")
+    pool = await aioredis.create_redis_pool(
+        f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
+        db=settings.REDIS_DB,
+        encoding="utf-8")
     return pool

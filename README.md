@@ -6,7 +6,20 @@
 cd doc_extracter
 ```
 
-1. 查看帮助
+1. 安装依赖
+
+```bash
+pip install -r requirements.txt
+```
+
+2. 修改配置
+
+```
+cd ../configs
+vim .env
+```
+
+3. 查看帮助
 
 ```bash
 python app.py --help
@@ -22,9 +35,9 @@ Options:
   --help                        Show this message and exit.
 ```
 
-2. 运行程序
+4. 运行程序
 
 ```bash
-python app.py --backend=files --dirname=/Users/fanchunke/Desktop/tmp/test-pdf --type=all
+python app.py --backend=redis --type=all
 ```
 
