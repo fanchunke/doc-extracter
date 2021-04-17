@@ -27,12 +27,8 @@ logger = logging.getLogger(__name__)
 )
 @click.option(
     '--type',
-    default="ppt",
-    help='处理的文件类型。如果 `--backend=files`，`--type` 为必需参数',
+    help='处理的文件类型',
     type=click.Choice(["pptx", "docx", "all"], case_sensitive=False),
-    option="backend",
-    value="files",
-    cls=OptionRequiredIf
 )
 @click.option(
     '--dirname',
@@ -50,7 +46,7 @@ logger = logging.getLogger(__name__)
 )
 @click.option(
     '--workers',
-    help="线程数",
+    help="worker数",
     type=int,
     default=10
 )
