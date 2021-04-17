@@ -16,7 +16,7 @@ from .base import BaseParser
 from .rules import preprocess_content
 from .utils import get_create_time, get_file_extension
 
-logger = logging.getLogger()
+logger = logging.getLogger("doc-extracter")
 
 
 class Parser(BaseParser):

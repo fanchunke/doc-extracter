@@ -28,7 +28,7 @@ Usage: app.py [OPTIONS]
 
 Options:
   --backend [files|http|redis]  获取文件的方式
-  --type [pptx|docx|all]        处理的文件类型
+  --type [pptx|docx|pdf|all]    处理的文件类型
   --dirname TEXT                处理的文档目录。如果 `--backend=files`，`--dirname` 为必需参数
   --url TEXT                    获取任务的服务地址。如果 `--backend=http`，`--url` 为必需参数
   --workers INTEGER             worker数

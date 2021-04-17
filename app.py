@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 @click.option(
     '--type',
     help='处理的文件类型',
-    type=click.Choice(["pptx", "docx", "all"], case_sensitive=False),
+    type=click.Choice(["pptx", "docx", "pdf", "all"], case_sensitive=False),
 )
 @click.option(
     '--dirname',

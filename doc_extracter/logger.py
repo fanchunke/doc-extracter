@@ -65,7 +65,17 @@ LOGGING = {
     },
 
     'loggers': {
-        '': {
+        'doc-extracter': {
+            'handlers': ['console', 'default', 'warn', 'error'],
+            'level': 'INFO',
+            # 'propagate': True,
+        },
+        'elasticsearch': {
+            'handlers': ['console', 'default', 'warn', 'error'],
+            'level': 'INFO',
+            # 'propagate': True,
+        },
+        'aioredis': {
             'handlers': ['console', 'default', 'warn', 'error'],
             'level': 'INFO',
             # 'propagate': True,

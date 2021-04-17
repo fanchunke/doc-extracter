@@ -23,6 +23,7 @@ class RedisBackend(Backend):
     mapper = {
         "pptx": "ppt",
         "docx": "doc",
+        "pdf": "pdf",
     }
 
     def __init__(self, pool: aioredis.Redis, supported_extensions: List[str]) -> None:

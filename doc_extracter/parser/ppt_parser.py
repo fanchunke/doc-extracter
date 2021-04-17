@@ -21,7 +21,7 @@ else:
     import win32com.client
 
 
-logger = logging.getLogger()
+logger = logging.getLogger("doc-extracter")
 
 class Parser(BaseParser):
 

@@ -23,6 +23,7 @@ from .backend.redis import RedisBackend
 from .errors import UnSupportedError
 from .extensions import create_index, create_pool, es
 from .parser.docx_parser import Parser as DocxParser
+from .parser.pdf_parser import Parser as PDFParser
 from .parser.pptx_parser import Parser as PPTXParser
 
 try:
@@ -30,7 +31,7 @@ try:
 except:
     PPTParser = None
 
-logger = logging.getLogger()
+logger = logging.getLogger("doc-extracter")
 
 
 from . import SUPPORTED_BACKEND, SUPPORTED_EXTENSIONS, Message
@@ -116,7 +117,6 @@ class AsyncTask(object):
         try:
             result = await loop.run_in_executor(self.executor, self._process, Message(**task))
             await self.handle_result([result])
-            logger.info(f"处理成功。id={task.get('id')}")
         except Exception as e:
             logger.error(f"处理失败。id={task.get('id')}, msg={str(e)}")
 
@@ -144,10 +144,10 @@ class AsyncTask(object):
         """
         start = time.time()
         cost = lambda: time.time() - start
-        logger.info(f"开始处理: {task.path}, id={task.id}")
+        logger.info(f"开始处理, filename={task.path}, id={task.id}")
 
         if task.state != 0:
-            logger.warning(f"任务处于其他状态，不处理。task: {task}")
+            logger.warning(f"任务处于其他状态，不处理。filename={task.path}, id={task.id}")
             return
 
         file_id = task.id
@@ -163,13 +163,14 @@ class AsyncTask(object):
                 body = PPTParser.extract(task)
             elif ext == ".docx":
                 body = DocxParser.extract(task)
+            elif ext == ".pdf":
+                body = PDFParser.extract(task)
             else:
                 raise UnSupportedError(f"UnSupported: {filename}")
 
             # state=1 处理成功
             result = {"state": 1, "body": asdict(body), "id": file_id}
             logger.info(f"解析成功, id={file_id}, filename={filename}, cost={cost()}")
-
         except UnSupportedError as e:
             logger.error(e)
             # state=2 不支持的类型
