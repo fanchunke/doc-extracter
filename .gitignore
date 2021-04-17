@@ -49,8 +49,6 @@ env/
 /node_modules/
 
 # Configuration
-.env
-example.env
 
 # Development database
 *.db
