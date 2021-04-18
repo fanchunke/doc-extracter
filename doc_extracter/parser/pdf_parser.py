@@ -6,12 +6,17 @@
 # @Email       :   fanchunke@laiye.com
 # @Description :   
 
+import io
 import os
 from typing import List
 
-import pdfplumber
 import fitz
+import pdfplumber
 from doc_extracter import Message, Result
+from pdfminer.converter import TextConverter
+from pdfminer.layout import LAParams
+from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
+from pdfminer.pdfpage import PDFPage
 
 from .base import BaseParser
 
@@ -42,6 +47,8 @@ class Parser(BaseParser):
             contents = Parser.extract_from_pdfplumber(filename)
         elif method == "PyMuPDF":
             contents = Parser.extract_from_pymupdf(filename)
+        elif method == "pdfminer":
+            contents = Parser.extract_from_pdfminer(filename)
         else:
             raise Exception(f"Unsupported method: {method}")
 
@@ -68,5 +75,32 @@ class Parser(BaseParser):
                     "page": index + 1,
                     "context": page.get_text("text")
                 })
+            if pdf.is_repaired:
+                raise Exception(f"解析失败, filename={filename}")
+
+        return contents
+
+    @staticmethod
+    def extract_from_pdfminer(filename: str) -> List[str]:
+        rsrcmgr = PDFResourceManager()
+        retstr = io.StringIO()
+        codec = 'utf-8'
+        laparams = LAParams()
+        device = TextConverter(rsrcmgr, retstr, codec=codec, laparams=laparams)
+        fp = open(filename, 'rb')
+        interpreter = PDFPageInterpreter(rsrcmgr, device)
+
+        contents = []
+        index = 1
+        for page in PDFPage.get_pages(fp):
+            interpreter.process_page(page)
+            contents.append({
+                "page": index,
+                "context": retstr.getvalue()
+            })
+
+        fp.close()
+        device.close()
+        retstr.close()
 
         return contents
