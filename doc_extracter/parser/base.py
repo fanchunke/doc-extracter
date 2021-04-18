@@ -16,7 +16,8 @@ class BaseParser(object):
     def postprocess(message: Message, contents: List[dict]) -> Result:
         result = Result(
             owner=message.owner,
-            file=message.path,
+            file=message.name,
+            path=message.path,
             file_type=message.ext,
             section=contents,
             date=message.date

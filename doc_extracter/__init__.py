@@ -27,6 +27,7 @@ class Message(object):
 class Result(object):
     owner: int
     file: str
+    path: str
     file_type: str
     section: List[dict]
     date: str
