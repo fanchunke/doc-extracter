@@ -180,36 +180,3 @@ class Task(object):
             logger.info(f"解析失败, id={file_id}, filename={filename}, cost={cost()}")
 
         return result
-
-    @staticmethod
-    def logger_configurer(queue: multiprocessing.Queue):
-        h = logging.handlers.QueueHandler(queue)
-        logger.addHandler(h)
-        logger.setLevel(logging.DEBUG)
-
-    @staticmethod
-    def logger_listener(queue: multiprocessing.Queue):
-        while True:
-            while not queue.empty():
-                record = queue.get()
-                logger = logging.getLogger(record.name)
-                logger.handle(record)
-            time.sleep(1)
-
-    def run(self):
-        logger.info("开始任务")
-        queue = multiprocessing.Queue()
-        listener = multiprocessing.Process(target=self.logger_listener, args=(queue,))
-        listener.start()
-
-        workers: List[multiprocessing.Process] = []
-
-        for _ in range(self.workers):
-            worker = multiprocessing.Process(target=self.extract, args=(queue,))
-            workers.append(worker)
-            worker.start()
-        
-        for worker in workers:
-            worker.join()
-
-        logger.info("结束任务")
