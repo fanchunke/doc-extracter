@@ -12,6 +12,8 @@ import logging.handlers
 import multiprocessing
 import time
 from typing import List
+import click
+from doc_extracter.command import OptionRequiredIf
 
 from doc_extracter.logger import LOGGING
 
@@ -49,6 +51,37 @@ def doc_extracter(type, backend, dirname, url, workers, queue):
         logger.info("Caught keyboard interrupt. Canceling tasks...")
 
 
+@click.command()
+@click.option(
+    '--backend',
+    help="获取文件的方式",
+    type=click.Choice(["files", "http", "redis"], case_sensitive=False)
+)
+@click.option(
+    '--type',
+    help='处理的文件类型',
+    type=click.Choice(["pptx", "docx", "pdf", "all"], case_sensitive=False),
+)
+@click.option(
+    '--dirname',
+    help='处理的文档目录。如果 `--backend=files`，`--dirname` 为必需参数',
+    option="backend",
+    value="files",
+    cls=OptionRequiredIf
+)
+@click.option(
+    "--url",
+    help='获取任务的服务地址。如果 `--backend=http`，`--url` 为必需参数',
+    option="backend",
+    value="http",
+    cls=OptionRequiredIf
+)
+@click.option(
+    '--workers',
+    help="worker数",
+    type=int,
+    default=10
+)
 def main(type, backend, dirname, url, workers):
     logger.info("开始任务")
     logger.info(f"backend: {backend}, type: {type}, dirname: {dirname}, url: {url}, workers: {workers}")
@@ -76,8 +109,4 @@ def main(type, backend, dirname, url, workers):
 
 
 if __name__ == '__main__':
-    backend = "redis"
-    type = "all"
-    dirname = url = None
-    workers = 10
-    main(type, backend, dirname, url, workers)
+    main()

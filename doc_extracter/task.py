@@ -180,3 +180,9 @@ class Task(object):
             logger.info(f"解析失败, id={file_id}, filename={filename}, cost={cost()}")
 
         return result
+
+    @staticmethod
+    def logger_configurer(queue: multiprocessing.Queue):
+        h = logging.handlers.QueueHandler(queue)
+        logger.addHandler(h)
+        logger.setLevel(logging.DEBUG)
