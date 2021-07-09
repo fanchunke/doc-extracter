@@ -12,11 +12,12 @@ from typing import List
 
 import fitz
 import pdfplumber
-from doc_extracter import Message, Result
 from pdfminer.converter import TextConverter
 from pdfminer.layout import LAParams
 from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
 from pdfminer.pdfpage import PDFPage
+
+from doc_extracter import Message, Result
 
 from .base import BaseParser
 

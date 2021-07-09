@@ -6,21 +6,36 @@
 # @Email       :   fanchunke@laiye.com
 # @Description :   
 
-import aioredis
-from elasticsearch import AsyncElasticsearch
+import redis
+from elasticsearch import Elasticsearch
 
-from .config import settings
-
-es = AsyncElasticsearch(hosts=[{"host": settings.ES_HOST, "port": settings.ES_PORT}])
+from .config import Setttings
 
 
-async def create_index(client: AsyncElasticsearch):
+def init_redis(settings: Setttings) -> redis.Redis:
+    rd = redis.Redis(
+        host=settings.REDIS_HOST,
+        port=settings.REDIS_PORT,
+        db=settings.REDIS_DB,
+        password=settings.REDIS_PASSWORD,
+        encoding="utf-8"
+    )
+    return rd
+
+
+def init_es(settings: Setttings) -> Elasticsearch:
+    es = Elasticsearch(host=settings.ES_HOST, port=settings.ES_PORT)
+    create_index(es)
+    return es
+
+
+def create_index(client: Elasticsearch):
     """Creates an index in Elasticsearch if one isn't already there."""
     index = "dahua-docs"
-    exists = await client.indices.exists(index)
+    exists = client.indices.exists(index)
     if exists:
         return
-    await client.indices.create(
+    client.indices.create(
         index=index,
         body={
             'settings': {
@@ -45,11 +60,3 @@ async def create_index(client: AsyncElasticsearch):
             },
         },
     )
-
-
-async def create_pool() -> aioredis.Redis:
-    pool = await aioredis.create_redis_pool(
-        f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
-        db=settings.REDIS_DB,
-        encoding="utf-8")
-    return pool

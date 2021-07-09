@@ -11,7 +11,10 @@ import glob
 import hashlib
 import itertools
 import os
-from typing import Any, Callable, Coroutine, List
+from typing import Any, Callable, Coroutine, Iterator, List
+
+from doc_extracter import Message
+from doc_extracter.utils import get_create_time
 
 from . import Backend
 
@@ -22,7 +25,7 @@ class FileBackend(Backend):
         self.dirname = dirname
         self.supported_extensions = supported_extensions
 
-    async def produce(self, queue: asyncio.Queue):
+    def consume(self) -> Iterator[Message]:
         if not os.path.exists(self.dirname):
             raise Exception(f"目录不存在: {self.dirname}")
 
@@ -40,12 +43,8 @@ class FileBackend(Backend):
                 "path": file,
                 "ext": f".{file.split('.')[-1]}",
                 "state": 0,
-                "owner": file.split("-")[0]
+                "owner": file.split("-")[0],
+                "date": get_create_time()
 
             }
-            await queue.put(data)
-
-    async def consume(self, queue: asyncio.Queue, callback: Callable[..., Coroutine[Any, Any, Any]]):
-        while True:
-            task = await queue.get()
-            await callback([task])
+            yield Message(**data)

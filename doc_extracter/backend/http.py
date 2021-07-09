@@ -8,6 +8,8 @@
 
 from typing import Iterator
 
+from doc_extracter import Message
+
 from . import Backend
 
 
@@ -16,5 +18,5 @@ class HTTPBackend(Backend):
     def __init__(self, url) -> None:
         self.url = url
 
-    def get_tasks(self) -> Iterator:
-        return []
+    def consume(self) -> Iterator[Message]:
+        return super().consume()

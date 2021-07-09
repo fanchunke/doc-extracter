@@ -6,9 +6,12 @@
 # @Email       :   fanchunke@laiye.com
 # @Description :  
 
+import asyncio
 import datetime
 import os
 import pathlib
+import time
+from typing import AsyncGenerator
 
 
 def get_create_time(filename: str) -> str:
@@ -24,3 +27,14 @@ def get_create_time(filename: str) -> str:
 def get_file_extension(filename: str) -> str:
     _, extension = os.path.splitext(filename)
     return extension.split(".")[-1]
+
+
+def poll(step: float = 0.5) -> AsyncGenerator[float, None]:
+    loop = asyncio.get_event_loop()
+    start = loop.time()
+    while True:
+        before = loop.time()
+        yield before - start
+        after = loop.time()
+        wait = max([0, step - after + before])
+        time.sleep(wait)

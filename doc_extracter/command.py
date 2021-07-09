@@ -8,6 +8,7 @@
 
 import click
 
+
 class OptionRequiredIf(click.Option):
     """
     Option is required if the context has `option` set to `value`

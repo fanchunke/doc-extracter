@@ -6,16 +6,18 @@
 # @Email       :   fanchunke@laiye.com
 # @Description :   
 
-import asyncio
 import json
 import logging
-from typing import Any, Callable, Coroutine, List
+import time
+from typing import Iterator, List
 
-import aioredis
+import redis
+
+from doc_extracter import Message
 
 from . import Backend
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("doc-extracter")
 
 
 class RedisBackend(Backend):
@@ -26,7 +28,7 @@ class RedisBackend(Backend):
         "pdf": "pdf",
     }
 
-    def __init__(self, pool: aioredis.Redis, supported_extensions: List[str]) -> None:
+    def __init__(self, pool: redis.Redis, supported_extensions: List[str]) -> None:
         self.pool = pool
         self.supported_extensions = supported_extensions
         self.keys = self.get_keys()
@@ -39,21 +41,15 @@ class RedisBackend(Backend):
             keys.append(f"{self.mapper.get(ext)}_queue")
         return keys
 
-    async def produce(self, queue: asyncio.Queue):
-        pass
-
-    async def consume(
-        self,
-        queue: asyncio.Queue,
-        callback: Callable[..., Coroutine[Any, Any, Any]]
-    ):
+    def consume(self) -> Iterator[Message]:
         while True:
-            task = await self.pool.brpop(*self.keys, timeout=5)
-            if not task:
-                await asyncio.sleep(10)
+            message = self.pool.brpop(self.keys, timeout=5)
+            logger.info(f"message: {message}")
+            if not message:
+                time.sleep(5)
                 continue
             try:
-                task = json.loads(task[-1])
-                await callback(task)
+                message = json.loads(message[-1])
+                yield Message(**message)
             except Exception as e:
-                logger.error(f"处理失败, message={task}, error={str(e)}")
+                logger.error(f"处理失败, message={message}, error={str(e)}")

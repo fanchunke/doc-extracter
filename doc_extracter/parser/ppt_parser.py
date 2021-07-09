@@ -6,12 +6,12 @@
 # @Email       :   fanchunke@laiye.com
 # @Description :   
 
-from doc_extracter.parser.base import BaseParser
 import logging
 import os
 import platform
 
 from doc_extracter import Message, Result
+from doc_extracter.parser.base import BaseParser
 
 from .pptx_parser import Parser as PPTXParser
 

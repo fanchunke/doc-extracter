@@ -6,17 +6,49 @@
 # @Email       :   fanchunke@laiye.com
 # @Description :   
 
-import asyncio
 import logging
 import logging.config
+import logging.handlers
+import multiprocessing
+from typing import List
 
 import click
 
-from doc_extracter.async_task import AsyncTask
 from doc_extracter.command import OptionRequiredIf
 from doc_extracter.logger import LOGGING
+from doc_extracter.task import Task
 
-logger = logging.getLogger(__name__)
+logging.config.dictConfig(LOGGING)
+logger = logging.getLogger("doc-extracter")
+
+
+def listener_configurer(queue: multiprocessing.Queue):
+    h = logging.handlers.QueueHandler(queue)
+    logger.addHandler(h)
+    logger.setLevel(logging.DEBUG)
+
+
+def listener_process(queue: multiprocessing.Queue):
+    while True:
+        try:
+            record = queue.get()
+            if record is None:
+                break
+            logger = logging.getLogger(record.name)
+            logger.handle(record)
+        except KeyboardInterrupt:
+            break
+        except Exception as e:
+            logger.exception(e)
+
+
+def doc_extracter(type, backend, dirname, url):
+    try:
+        task = Task(type, backend, dirname, url)
+        task.run()
+        logger.info("结束任务")
+    except KeyboardInterrupt as e:
+        logger.info("Caught keyboard interrupt. Canceling tasks...")
 
 
 @click.command()
@@ -48,24 +80,34 @@ logger = logging.getLogger(__name__)
     '--workers',
     help="worker数",
     type=int,
-    default=10
+    default=4
 )
-def doc_extracter(type, backend, dirname, url, workers):
+def main(type, backend, dirname, url, workers):
+    logger.info("开始任务")
     logger.info(f"backend: {backend}, type: {type}, dirname: {dirname}, url: {url}, workers: {workers}")
-    loop = asyncio.get_event_loop()
-    try:
-        asyncio.run(main(type, backend, dirname, url, workers))
-    except KeyboardInterrupt as e:
-        logger.info("Caught keyboard interrupt. Canceling tasks...")
-    finally:
-        loop.close()
+    queue = multiprocessing.Queue(-1)
+    listener = multiprocessing.Process(target=listener_process, args=(queue,))
+    listener.start()
 
+    worker_list: List[multiprocessing.Process] = []
+    for _ in range(workers):
+        worker = multiprocessing.Process(
+            target=doc_extracter,
+            args=(type, backend, dirname, url,)
+        )
+        worker_list.append(worker)
+        worker.start()
+    
+    for worker in worker_list:
+        try:
+            worker.join()
+        except KeyboardInterrupt:
+            worker.terminate()
 
-async def main(type, backend, dirname, url, workers):
-    async with AsyncTask(type, backend, dirname, url, workers) as t:
-        await t.run()
+    queue.put_nowait(None)
+    listener.join()
+    logger.info("结束任务")
 
 
 if __name__ == '__main__':
-    logging.config.dictConfig(LOGGING)
-    doc_extracter()
+    main()

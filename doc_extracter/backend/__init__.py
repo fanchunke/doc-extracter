@@ -7,16 +7,13 @@
 # @Description :   
 
 from abc import ABC, abstractmethod
-import asyncio
-from typing import Callable, Coroutine, Any
+from typing import Iterator
+
+from doc_extracter import Message
 
 
 class Backend(ABC):
 
     @abstractmethod
-    async def produce(self, queue: asyncio.Queue):
-        ...
-
-    @abstractmethod
-    async def consume(self, queue: asyncio.Queue, callback: Callable[..., Coroutine[Any, Any, Any]]):
+    def consume(self) -> Iterator[Message]:
         ...

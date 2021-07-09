@@ -10,11 +10,10 @@ import logging
 import os
 
 import docx
+
 from doc_extracter import Message, Result
 
 from .base import BaseParser
-from .rules import preprocess_content
-from .utils import get_create_time, get_file_extension
 
 logger = logging.getLogger("doc-extracter")
 

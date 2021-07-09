@@ -14,6 +14,7 @@ class Setttings(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: int
     REDIS_DB: int = 0
+    REDIS_PASSWORD: str
 
     ES_HOST: str
     ES_PORT: int = 9200

@@ -10,19 +10,21 @@ import json
 import logging
 import logging.config
 import logging.handlers
-import multiprocessing
 import time
 from dataclasses import asdict
-from typing import List, Optional
+from typing import Optional
 
 import redis
 from elasticsearch import Elasticsearch, helpers
 
 from doc_extracter import Message
 from doc_extracter.config import Setttings
-from doc_extracter.logger import LOGGING
+from doc_extracter.extensions import init_redis, init_es
 
-from . import SUPPORTED_BACKEND, SUPPORTED_EXTENSIONS
+from . import SUPPORTED_BACKEND, SUPPORTED_EXTENSIONS, Message
+from .backend.file import FileBackend
+from .backend.http import HTTPBackend
+from .backend.redis import RedisBackend
 from .errors import UnSupportedError
 from .parser.docx_parser import Parser as DocxParser
 from .parser.pdf_parser import Parser as PDFParser
@@ -33,15 +35,13 @@ try:
 except:
     PPTParser = None
 
-logging.config.dictConfig(LOGGING)
 logger = logging.getLogger("doc-extracter")
 settings = Setttings()
 
+
 class Task(object):
 
-    CHUNK_SIZE = 100
     RESULT_KEY = "result_queue"
-    MESSAGE_KEY = ("pdf_queue", "ppt_queue", "doc_queue",)
 
     def __init__(
         self,
@@ -49,49 +49,56 @@ class Task(object):
         backend: str,
         dirname: Optional[str] = None,
         url: Optional[str] = None,
-        workers: int = 1
     ) -> None:
+
         self.supported_type = supported_type
-        # if backend not in SUPPORTED_BACKEND:
-        #     raise Exception(f"Unsupported backend: {backend}")
-        # if backend == "http" and not url:
-        #     raise Exception(f"url required if backend is {backend}")
-        # if backend == "files" and not dirname:
-        #     raise Exception(f"dirname required if backend is {backend}")
-        if backend != "redis":
-            raise Exception("Unsupported backend")
+        if self.supported_type != "all" and self.supported_type not in SUPPORTED_EXTENSIONS:
+            raise Exception(f"文件扩展不支持: {self.supported_type}")
+
+        if backend not in SUPPORTED_BACKEND:
+            raise Exception(f"Unsupported backend: {backend}")
+        if backend == "http" and not url:
+            raise Exception(f"url required if backend is {backend}")
+        if backend == "files" and not dirname:
+            raise Exception(f"dirname required if backend is {backend}")
         self.backend = backend
+
         self.dirname = dirname
         self.url = url
-        if workers <= 0:
-            raise Exception(f"线程数不合法: {workers}")
-        self.workers = workers
-        self.redis = redis.Redis(
-            host=settings.REDIS_HOST,
-            port=settings.REDIS_PORT,
-            db=settings.REDIS_DB,
-            encoding="utf-8"
-        )
-        self.es = Elasticsearch(host=settings.ES_HOST, port=settings.ES_PORT)
 
-    def extract(self, queue: multiprocessing.Queue):
-        self.logger_configurer(queue)
-        while True:
-            data = self.redis.brpop(self.MESSAGE_KEY)
-            if not data:
-                time.sleep(5)
-                continue
-            data = data[-1]
+        # 初始化 redis 
+        self.redis: redis.Redis = init_redis(settings)
+
+        # 初始化 es 
+        self.es: Elasticsearch = init_es(settings)
+
+    def run(self):
+
+        if self.supported_type == "all":
+            supported_extensions = SUPPORTED_EXTENSIONS
+        else:
+            supported_extensions = [self.supported_type]
+
+        supported_extensions = list(set(supported_extensions))
+
+        if self.backend == "files":
+            backend = FileBackend(self.dirname, supported_extensions)
+        elif self.backend == "http":
+            backend = HTTPBackend(self.url)
+        elif self.backend == "redis":
+            backend = RedisBackend(self.redis, supported_extensions)
+        else:
+            raise Exception(f"不支持的 backend: {self.backend}")
+
+        for message in backend.consume():
             try:
-                data = json.loads(data)
-                message = Message(**data)
                 start = time.time()
                 cost = lambda: time.time() - start
-                logger.info(f"开始处理，id={message.id}, filename={message.name}")
+                logger.info(f"开始处理，id={message.id}, filename={message.path}")
                 self.process(message)
             except Exception as e:
                 logger.exception(e)
-                logger.error(f"处理失败，id={message.id}, filename={message.name}, cost={cost()}")
+                logger.error(f"处理失败，id={message.id}, filename={message.path}, cost={cost()}")
 
     def process(self, message: Message):
         result = self._process(message)
@@ -180,9 +187,3 @@ class Task(object):
             logger.info(f"解析失败, id={file_id}, filename={filename}, cost={cost()}")
 
         return result
-
-    @staticmethod
-    def logger_configurer(queue: multiprocessing.Queue):
-        h = logging.handlers.QueueHandler(queue)
-        logger.addHandler(h)
-        logger.setLevel(logging.DEBUG)

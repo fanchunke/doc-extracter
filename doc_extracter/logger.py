@@ -26,7 +26,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'default': {
-            'format': "%(asctime)-15s %(levelname)-8s %(module)s:%(funcName)s:%(lineno)d %(message)s"
+            'format': "%(asctime)-15s %(levelname)-8s %(process)d %(module)s:%(funcName)s:%(lineno)d %(message)s"
         },
     },
     'handlers': {
@@ -37,28 +37,22 @@ LOGGING = {
         },
         'default': {
             'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_LOG_DIR, "parser.log"),
-            'maxBytes': 1024 * 1024 * 100,
-            'backupCount': 30,
             'formatter': 'default',
             'encoding': 'utf-8',
         },
         'warn': {
             'level': 'WARN',
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_LOG_DIR, "parser-warn.log"),
-            'maxBytes': 1024 * 1024 * 100,
-            'backupCount': 30,
             'formatter': 'default',
             'encoding': 'utf-8',
         },
         'error': {
             'level': 'ERROR',
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_LOG_DIR, "parser-error.log"),
-            'maxBytes': 1024 * 1024 * 100,
-            'backupCount': 30,
             'formatter': 'default',
             'encoding': 'utf-8',
         },
@@ -71,11 +65,6 @@ LOGGING = {
             # 'propagate': True,
         },
         'elasticsearch': {
-            'handlers': ['console', 'default', 'warn', 'error'],
-            'level': 'INFO',
-            # 'propagate': True,
-        },
-        'aioredis': {
             'handlers': ['console', 'default', 'warn', 'error'],
             'level': 'INFO',
             # 'propagate': True,
