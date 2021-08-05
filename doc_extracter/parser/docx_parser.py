@@ -40,13 +40,14 @@ class Parser(BaseParser):
         if not os.path.exists(filename):
             raise Exception(f"Not Found: {filename}")
 
-        document = docx.Document(filename)
-        page = 0
-        section = []
-        for i, paragraph in enumerate(document.paragraphs):
-            if paragraph.text:
-                page += 1
-                section.append({"page": page, "context": paragraph.text})
+        with open(filename, 'rb') as f:
+            document = docx.Document(f)
+            page = 0
+            section = []
+            for i, paragraph in enumerate(document.paragraphs):
+                if paragraph.text:
+                    page += 1
+                    section.append({"page": page, "context": paragraph.text})
 
         data = Parser.postprocess(message, section)
         return data

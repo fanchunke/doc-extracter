@@ -40,24 +40,25 @@ class Parser(BaseParser):
         if not os.path.exists(filename):
             raise Exception(f"Not Found: {filename}")
 
-        presentation = pptx.Presentation(filename)
-        text_runs = []
-        for index, slide in enumerate(presentation.slides):
-            contents = []
-            for shape in slide.shapes:
-                if not shape.has_text_frame:
-                    continue
-                for paragraph in shape.text_frame.paragraphs:
-                    for run in paragraph.runs:
-                        contents.append(run.text)
-            
-            origin_contents = "\n\n".join(contents)
-            text_runs.append(
-                {
-                    "page": index + 1,
-                    "context": origin_contents,
-                }
-            )
+        with open(filename, 'rb') as f:
+            presentation = pptx.Presentation(f)
+            text_runs = []
+            for index, slide in enumerate(presentation.slides):
+                contents = []
+                for shape in slide.shapes:
+                    if not shape.has_text_frame:
+                        continue
+                    for paragraph in shape.text_frame.paragraphs:
+                        for run in paragraph.runs:
+                            contents.append(run.text)
+                
+                origin_contents = "\n\n".join(contents)
+                text_runs.append(
+                    {
+                        "page": index + 1,
+                        "context": origin_contents,
+                    }
+                )
 
         data = Parser.postprocess(message, text_runs)   
         return data
