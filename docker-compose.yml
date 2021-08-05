@@ -1,0 +1,12 @@
+version: "3.9"
+
+services: 
+    worker:
+        build: 
+            context: ./
+            dockerfile: Dockerfile
+        volumes: 
+            - ./logs:/home/works/program/logs
+        restart: always
+        mem_limit: 1GB
+        container_name: fanchunke-doc-extract
