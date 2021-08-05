@@ -52,11 +52,11 @@ class Parser(BaseParser):
             raise Exception(f"Not Found: {filename}")
 
         m = extract_msg.Message(filename)
-        context = ensure_bytes(m.subject) + six.b('\n\n') + ensure_bytes(m.body)
+        context: bytes = ensure_bytes(m.subject) + six.b('\n\n') + ensure_bytes(m.body)
 
         text_runs = [{
             "page": 1,
-            "context": context,
+            "context": context.decode("utf-8"),
         }]
 
         data = Parser.postprocess(message, text_runs)   
