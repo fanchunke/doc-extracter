@@ -26,6 +26,7 @@ class RedisBackend(Backend):
         "pptx": "ppt",
         "docx": "doc",
         "pdf": "pdf",
+        "msg": "msg",
     }
 
     def __init__(self, pool: redis.Redis, supported_extensions: List[str]) -> None:

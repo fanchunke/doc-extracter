@@ -27,6 +27,7 @@ from .backend.http import HTTPBackend
 from .backend.redis import RedisBackend
 from .errors import UnSupportedError
 from .parser.docx_parser import Parser as DocxParser
+from .parser.msg_parser import Parser as MsgParser
 from .parser.pdf_parser import Parser as PDFParser
 from .parser.pptx_parser import Parser as PPTXParser
 
@@ -169,6 +170,8 @@ class Task(object):
                 body = DocxParser.extract(task)
             elif ext == ".pdf":
                 body = PDFParser.extract(task)
+            elif ext == ".msg":
+                body = MsgParser.extract(task)
             else:
                 raise UnSupportedError(f"UnSupported: {filename}")
 

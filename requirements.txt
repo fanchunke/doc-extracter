@@ -6,3 +6,4 @@ pydantic[dotenv]
 PyMuPDF
 pdfplumber
 redis
+extract_msg

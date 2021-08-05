@@ -9,7 +9,7 @@
 from dataclasses import dataclass
 from typing import List
 
-SUPPORTED_EXTENSIONS = ["pptx", "docx", "pdf"]
+SUPPORTED_EXTENSIONS = ["pptx", "docx", "pdf", "msg"]
 SUPPORTED_BACKEND = ["files", "http", "redis"]
 
 @dataclass
