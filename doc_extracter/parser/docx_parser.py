@@ -42,12 +42,10 @@ class Parser(BaseParser):
 
         with open(filename, 'rb') as f:
             document = docx.Document(f)
-            page = 0
             section = []
             for i, paragraph in enumerate(document.paragraphs):
                 if paragraph.text:
-                    page += 1
-                    section.append({"page": page, "context": paragraph.text})
+                    section.append({"page": i+1, "context": paragraph.text})
 
         data = Parser.postprocess(message, section)
         return data
