@@ -51,8 +51,8 @@ class Parser(BaseParser):
         if not os.path.exists(filename):
             raise Exception(f"Not Found: {filename}")
 
-        m = extract_msg.Message(filename)
-        context: bytes = ensure_bytes(m.subject) + six.b('\n\n') + ensure_bytes(m.body)
+        with extract_msg.Message(filename) as m:
+            context: bytes = ensure_bytes(m.subject) + six.b('\n\n') + ensure_bytes(m.body)
 
         text_runs = [{
             "page": 1,
