@@ -47,5 +47,13 @@ class Parser(BaseParser):
                 if paragraph.text:
                     section.append({"page": i+1, "context": paragraph.text})
 
+            # 处理表格
+            table_data = []
+            for table in document.tables:
+                for row in table.rows:
+                    table_data.extend([cell.text for cell in row.cells])
+            if table_data:
+                section.append({"page": 1, "context": "\n".join(table_data)})
+
         data = Parser.postprocess(message, section)
         return data
