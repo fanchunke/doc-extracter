@@ -14,6 +14,7 @@ import pika
 from pika.adapters.blocking_connection import BlockingChannel
 
 from ..message import Message
+from ..utils import ensure_string
 from . import Broker
 
 logger = logging.getLogger("doc-extracter")
@@ -39,10 +40,11 @@ class AMQPBroker(Broker):
             parameters=pika.URLParameters(self._amqp_url)
         )
         self.channel = self.connection.channel()
-        self.channel.exchange_declare(exchange=self.exchange, exchange_type=self.exchange_type)
         self.channel.queue_declare(self.queue, durable=True)
-        for key in self.routing_key:
-            self.channel.queue_bind(queue=self.queue, exchange=self.exchange, routing_key=key)
+        if self.exchange:
+            self.channel.exchange_declare(exchange=self.exchange, exchange_type=self.exchange_type)
+            for key in self.routing_key:
+                self.channel.queue_bind(queue=self.queue, exchange=self.exchange, routing_key=key)
         self.channel.basic_qos(prefetch_count=self.prefetch_count)
 
     def publish(self, message: Message):
@@ -53,7 +55,7 @@ class AMQPBroker(Broker):
             self.connect()
 
         for frame, _, message in self.channel.consume(self.queue):
-            logger.info(f"message: {message}")
+            logger.info(f"message: {ensure_string(message)}")
             if not message:
                 yield None
             else:

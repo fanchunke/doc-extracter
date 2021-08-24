@@ -78,12 +78,12 @@ class Worker(object):
         except UnSupportedError as e:
             logger.error(e)
             # state=-1 不支持的类型
-            result = ResultMessage(status=JobStatus.unsupported, id=file_id)
+            result = ResultMessage(status=JobStatus.unsupported, id=file_id, queue=message.queue)
             logger.info(f"文件不支持, id={file_id}, filename={filename}, cost={cost()}")
         except Exception as e:
             logger.exception(e)
             # state=2 处理失败
-            result = ResultMessage(status=JobStatus.failed, id=file_id)
+            result = ResultMessage(status=JobStatus.failed, id=file_id, queue=message.queue)
             logger.info(f"解析失败, id={file_id}, filename={filename}, cost={cost()}")
 
         return result

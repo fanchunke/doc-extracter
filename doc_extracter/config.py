@@ -61,15 +61,21 @@ class Setttings(BaseSettings):
     BACKEND_TYPE: BrokerType
     BACKEND_URL: str
 
-    EXCHANGE: Optional[str]
+    EXCHANGE: Optional[str] = ""
     EXCHANGE_TYPE: Optional[str]
-    ROUTING_KEY: List[str]
+    ROUTING_KEY: Union[List[str], str]
     QUEUE: Optional[str]
 
     @validator("MESSAGE_TYPE")
     def check_message_type(cls, v, values: dict, **kwargs):
         if isinstance(v, str):
-            v = v.split('')
+            v = v.split()
+        return v
+
+    @validator("ROUTING_KEY")
+    def check_routing_key(cls, v, values: dict, **kwargs):
+        if isinstance(v, str):
+            v = v.split()
         return v
 
     @validator("BROKER_URL")

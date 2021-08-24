@@ -13,6 +13,8 @@ import pathlib
 import time
 from typing import AsyncGenerator
 
+import six
+
 
 def get_create_time(filename: str) -> str:
     fname = pathlib.Path(filename)
@@ -38,3 +40,9 @@ def poll(step: float = 0.5) -> AsyncGenerator[float, None]:
         after = loop.time()
         wait = max([0, step - after + before])
         time.sleep(wait)
+
+
+def ensure_string(string):
+    if isinstance(string, six.binary_type):
+        return string.decode('utf-8')
+    return string

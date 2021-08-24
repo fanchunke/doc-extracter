@@ -13,6 +13,7 @@ from typing import Iterator, List, Optional
 import redis
 
 from ..message import Message
+from ..utils import ensure_string
 from . import Broker
 
 logger = logging.getLogger("doc-extracter")
@@ -39,7 +40,7 @@ class RedisBroker(Broker):
 
     def consume(self) -> Iterator[Optional[Message]]:
         message = self.pool.brpop(self.keys, timeout=1)
-        logger.info(f"message: {message}")
+        logger.info(f"message: {ensure_string(message)}")
         if not message:
             yield None
         else:

@@ -33,8 +33,7 @@ logger = logging.getLogger("doc-extracter")
     '--message-type',
     help='处理的文件类型',
     envvar="MESSAGE_TYPE",
-    # type=click.Choice(MessageType.types(), case_sensitive=False),
-    type=click.Path(),
+    type=click.Choice(MessageType.types(), case_sensitive=False),
     multiple=True,
     required=False,
 )
@@ -167,10 +166,6 @@ def run(settings: Setttings):
         client.start_worker()
     except KeyboardInterrupt:
         client.stop_worker()
-
-
-def run_from_conf(ctx, param, value):
-    print(param, value)
 
 
 if __name__ == '__main__':
