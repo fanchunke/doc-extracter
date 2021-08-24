@@ -9,8 +9,8 @@
 import logging
 import os
 import platform
+from typing import List
 
-from doc_extracter import Message, Result
 from doc_extracter.parser.base import BaseParser
 
 from .pptx_parser import Parser as PPTXParser
@@ -25,12 +25,14 @@ logger = logging.getLogger("doc-extracter")
 
 class Parser(BaseParser):
 
-    @staticmethod
-    def extract(message: Message, **kwargs) -> Result:
-        """ 解析文本
+    supported_extension = '.ppt'
+
+    @classmethod
+    def parse(cls, filename) -> List[dict]:
+        """ 解析 .pptx
 
         Args:
-            filename (str): `.pptx` 为扩展名的文件
+            filename (str): `.ppt` 为扩展名的文件
 
         Raises:
             Exception: [description]
@@ -38,8 +40,7 @@ class Parser(BaseParser):
         Returns:
             [type]: [description]
         """
-        filename = message.path
-        if not filename.endswith(".ppt"):
+        if not filename.endswith(cls.supported_extension):
             raise Exception(f"Unsupported file: {filename}")
 
         if not os.path.exists(filename):
@@ -57,12 +58,11 @@ class Parser(BaseParser):
         app = presentation = None
 
         try:
-            data = PPTXParser.extract(message)
+            data = PPTXParser.parse(pptx_filename)
         except Exception as e:
             logger.exception(e)
             raise
         finally:
             os.remove(pptx_filename)
 
-        data.file = filename
         return data

@@ -8,10 +8,10 @@
 
 import logging
 import os
+from typing import List
 
 import extract_msg
 import six
-from doc_extracter import Message, Result
 
 from .base import BaseParser
 
@@ -31,33 +31,32 @@ def ensure_bytes(string):
 
 class Parser(BaseParser):
 
-    @staticmethod
-    def extract(message: Message, **kwargs) -> Result:
-        """ 解析文本
+    supported_extension = '.msg'
+
+    @classmethod
+    def parse(cls, filename: str) -> List[dict]:
+        """ 解析 .msg
 
         Args:
-            filename (str): `.pptx` 为扩展名的文件
+            filename (str): `.msg` 为扩展名的文件
 
         Raises:
-            Exception: [description]
+            Exception: 不支持的文件类型/文件不存在
 
         Returns:
-            [type]: [description]
+            List[dict]: 解析结果
         """
-        filename = message.path
-        if not filename.endswith(".msg"):
+        if not filename.endswith(cls.supported_extension):
             raise Exception(f"Unsupported file: {filename}")
 
         if not os.path.exists(filename):
             raise Exception(f"Not Found: {filename}")
 
+        text_runs = []
         with extract_msg.Message(filename) as m:
             context: bytes = ensure_bytes(m.subject) + six.b('\n\n') + ensure_bytes(m.body)
-
-        text_runs = [{
-            "page": 1,
-            "context": context.decode("utf-8"),
-        }]
-
-        data = Parser.postprocess(message, text_runs)   
-        return data
+            text_runs = [{
+                "page": 1,
+                "context": context.decode("utf-8"),
+            }]
+        return text_runs

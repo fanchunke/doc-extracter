@@ -24,11 +24,11 @@ class OptionRequiredIf(click.Option):
 
         click.Option.__init__(self, *a, **k)
         self._option = option
-        self._value = value
+        self._value = value.split(",")
 
     def full_process_value(self, ctx, value):
         value = super(OptionRequiredIf, self).full_process_value(ctx, value)
-        if value is None and ctx.params[self._option] == self._value:
+        if value is None and ctx.params[self._option] in self._value:
             msg = 'Required if --{}={}'.format(self._option, self._value)
             raise click.MissingParameter(ctx=ctx, param=self, message=msg)
         return value

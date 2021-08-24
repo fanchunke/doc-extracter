@@ -17,33 +17,34 @@ from pdfminer.layout import LAParams
 from pdfminer.pdfinterp import PDFPageInterpreter, PDFResourceManager
 from pdfminer.pdfpage import PDFPage
 
-from doc_extracter import Message, Result
-
 from .base import BaseParser
 
 
 class Parser(BaseParser):
 
-    @staticmethod
-    def extract(message: Message, method="PyMuPDF", **kwargs) -> Result:
-        """ 解析文本
+    supported_extension = '.pdf'
+    default_method = 'PyMuPDF'
+
+    @classmethod
+    def parse(cls, filename: str) -> List[dict]:
+        """ 解析 .pdf
 
         Args:
             filename (str): `.pdf` 为扩展名的文件
 
         Raises:
-            Exception: [description]
+            Exception: 不支持的文件类型/文件不存在
 
         Returns:
-            [type]: [description]
+            List[dict]: 解析结果
         """
-        filename = message.path
-        if not filename.endswith(".pdf"):
+        if not filename.endswith(cls.supported_extension):
             raise Exception(f"Unsupported file: {filename}")
 
         if not os.path.exists(filename):
             raise Exception(f"Not Found: {filename}")
-        
+
+        method = cls.default_method
         if method == "pdfplumber":
             contents = Parser.extract_from_pdfplumber(filename)
         elif method == "PyMuPDF":
@@ -52,9 +53,7 @@ class Parser(BaseParser):
             contents = Parser.extract_from_pdfminer(filename)
         else:
             raise Exception(f"Unsupported method: {method}")
-
-        data = Parser.postprocess(message, contents)   
-        return data
+        return contents
 
     @staticmethod
     def extract_from_pdfplumber(filename: str) -> List[dict]:

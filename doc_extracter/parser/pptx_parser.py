@@ -8,10 +8,9 @@
 
 import logging
 import os
+from typing import List
 
 import pptx
-
-from doc_extracter import Message, Result
 
 from .base import BaseParser
 
@@ -20,29 +19,30 @@ logger = logging.getLogger("doc-extracter")
 
 class Parser(BaseParser):
 
-    @staticmethod
-    def extract(message: Message, **kwargs) -> Result:
-        """ 解析文本
+    supported_extension = '.pptx'
+
+    @classmethod
+    def parse(cls, filename: str) -> List[dict]:
+        """ 解析 .pptx
 
         Args:
             filename (str): `.pptx` 为扩展名的文件
 
         Raises:
-            Exception: [description]
+            Exception: 不支持的文件类型/文件不存在
 
         Returns:
-            [type]: [description]
+            List[dict]: 解析结果
         """
-        filename = message.path
-        if not filename.endswith(".pptx"):
+        if not filename.endswith(cls.supported_extension):
             raise Exception(f"Unsupported file: {filename}")
 
         if not os.path.exists(filename):
             raise Exception(f"Not Found: {filename}")
 
+        text_runs = []
         with open(filename, 'rb') as f:
             presentation = pptx.Presentation(f)
-            text_runs = []
             for index, slide in enumerate(presentation.slides):
                 contents = []
                 for shape in slide.shapes:
@@ -59,6 +59,4 @@ class Parser(BaseParser):
                         "context": origin_contents,
                     }
                 )
-
-        data = Parser.postprocess(message, text_runs)   
-        return data
+        return text_runs

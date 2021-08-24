@@ -8,10 +8,9 @@
 
 import logging
 import os
+from typing import List
 
 import docx
-
-from doc_extracter import Message, Result
 
 from .base import BaseParser
 
@@ -20,29 +19,30 @@ logger = logging.getLogger("doc-extracter")
 
 class Parser(BaseParser):
 
-    @staticmethod
-    def extract(message: Message, **kwargs) -> Result:
-        """ 解析文本
+    supported_extension = '.docx'
+
+    @classmethod
+    def parse(cls, filename: str) -> List[dict]:
+        """ 解析 docx
 
         Args:
             filename (str): `.docx` 为扩展名的文件
 
         Raises:
-            Exception: [description]
+            Exception: 不支持的文件类型/文件不存在
 
         Returns:
-            [type]: [description]
+            List[dict]: 解析结果
         """
-        filename = message.path
-        if not filename.endswith(".docx"):
+        if not filename.endswith(cls.supported_extension):
             raise Exception(f"Unsupported file: {filename}")
 
         if not os.path.exists(filename):
             raise Exception(f"Not Found: {filename}")
 
+        section = []
         with open(filename, 'rb') as f:
             document = docx.Document(f)
-            section = []
             for i, paragraph in enumerate(document.paragraphs):
                 if paragraph.text:
                     section.append({"page": i+1, "context": paragraph.text})
@@ -54,6 +54,4 @@ class Parser(BaseParser):
                     table_data.extend([cell.text for cell in row.cells])
             if table_data:
                 section.append({"page": 1, "context": "\n".join(table_data)})
-
-        data = Parser.postprocess(message, section)
-        return data
+        return section

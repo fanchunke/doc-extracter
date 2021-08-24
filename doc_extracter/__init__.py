@@ -5,29 +5,3 @@
 # @Author      :   fanchunke
 # @Email       :   fanchunke@laiye.com
 # @Description :   
-
-from dataclasses import dataclass
-from typing import List
-
-SUPPORTED_EXTENSIONS = ["pptx", "docx", "pdf", "msg"]
-SUPPORTED_BACKEND = ["files", "http", "redis"]
-
-@dataclass
-class Message(object):
-    id: str
-    owner: int
-    name: str
-    path: str
-    ext: str
-    date: str
-    state: int = 0
-
-
-@dataclass
-class Result(object):
-    owner: int
-    file: str
-    path: str
-    file_type: str
-    section: List[dict]
-    date: str

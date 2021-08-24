@@ -1,31 +1,35 @@
 # -*- encoding: utf-8 -*-
 
 # @File        :   file.py
-# @Time        :   2021/04/16 11:08:58
+# @Time        :   2021/08/22 20:52:06
 # @Author      :   fanchunke
 # @Email       :   fanchunke@laiye.com
 # @Description :   
 
-import asyncio
 import glob
 import hashlib
 import itertools
+import logging
 import os
-from typing import Any, Callable, Coroutine, Iterator, List
+from typing import Iterator, List, Optional
 
-from doc_extracter import Message
-from doc_extracter.utils import get_create_time
+from ..message import Message, NoMoreMessage
+from ..utils import get_create_time
+from . import Broker
 
-from . import Backend
+logger = logging.getLogger("doc-extracter")
 
 
-class FileBackend(Backend):
+class FileBroker(Broker):
 
     def __init__(self, dirname: str, supported_extensions: List[str]) -> None:
         self.dirname = dirname
         self.supported_extensions = supported_extensions
 
-    def consume(self) -> Iterator[Message]:
+    def publish(self, message: Message):
+        return super().publish(message)
+
+    def consume(self) -> Iterator[Optional[Message]]:
         if not os.path.exists(self.dirname):
             raise Exception(f"目录不存在: {self.dirname}")
 
@@ -38,13 +42,12 @@ class FileBackend(Backend):
 
         for file in files:
             data = {
+                "queue": f"{file.split('.')[-1]}",
                 "id": hashlib.md5(file.encode("utf-8")).hexdigest(),
-                "name": os.path.basename(file),
+                "file": os.path.basename(file),
                 "path": file,
                 "ext": f".{file.split('.')[-1]}",
-                "state": 0,
-                "owner": file.split("-")[0],
-                "date": get_create_time()
-
             }
             yield Message(**data)
+        logger.info("No more message")
+        yield NoMoreMessage

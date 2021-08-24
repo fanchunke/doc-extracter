@@ -26,4 +26,4 @@ COPY configs ./configs
 COPY doc_extracter ./doc_extracter
 COPY app.py ./app.py
 
-CMD ["python", "app.py", "--backend=redis", "--type=all"]
+CMD ["python", "app.py"]

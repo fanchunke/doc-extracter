@@ -7,6 +7,10 @@ services:
             dockerfile: Dockerfile
         volumes: 
             - ./logs:/home/works/program/logs
+        env_file: 
+            - ./configs/.env
         restart: always
         mem_limit: 1GB
-        container_name: fanchunke-doc-extract
+        # container_name: fanchunke-doc-extract
+        deploy:
+            replicas: 2
