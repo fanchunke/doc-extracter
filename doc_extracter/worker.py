@@ -49,11 +49,11 @@ class Worker(object):
                         http_backend.set_result(result_message.id, result_message)
                     except Exception as e:
                         logger.error(f"failed to set callback: {str(e)}")
-
-                try:
-                    self.backend.set_result(result_message.id, result_message)
-                except Exception as e:
-                    logger.error(f"failed to set result message: {str(e)}")
+                else:
+                    try:
+                        self.backend.set_result(result_message.id, result_message)
+                    except Exception as e:
+                        logger.error(f"failed to set result message: {str(e)}")
         logger.info("Worker Stopped Successfully")
         self.started = False
 

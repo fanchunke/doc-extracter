@@ -7,3 +7,4 @@ pdfplumber
 extract_msg
 redis
 pika==1.2.0
+requests==2.26.0
