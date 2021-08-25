@@ -40,7 +40,7 @@ class AMQPBroker(Broker):
             parameters=pika.URLParameters(self._amqp_url)
         )
         self.channel = self.connection.channel()
-        self.channel.queue_declare(self.queue, durable=True)
+        self.channel.queue_declare(self.queue, durable=False)
         if self.exchange:
             self.channel.exchange_declare(exchange=self.exchange, exchange_type=self.exchange_type)
             for key in self.routing_key:
