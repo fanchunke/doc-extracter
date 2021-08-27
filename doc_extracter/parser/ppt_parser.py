@@ -40,8 +40,6 @@ class Parser(BaseParser):
         Returns:
             [type]: [description]
         """
-        if not filename.endswith(cls.supported_extension):
-            raise Exception(f"Unsupported file: {filename}")
 
         if not os.path.exists(filename):
             raise Exception(f"Not Found: {filename}")
