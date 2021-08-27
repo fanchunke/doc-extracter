@@ -43,7 +43,7 @@ class BaseParser(object):
 
     @classmethod
     def preprocess(cls, message: Message):
-        if ensure_extension(message.ext) != ensure_extension(cls.supported_extension):
+        if ensure_extension(message.queue) != ensure_extension(cls.supported_extension):
             raise Exception(f"Unsupported file: {message.path}")
 
     @staticmethod
