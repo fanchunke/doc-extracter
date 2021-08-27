@@ -24,8 +24,8 @@ def process(
 ) -> Result:
     if extension:
         ext = extension
-    elif message.ext:
-        ext = message.ext
+    elif message.queue:
+        ext = message.queue
     else:
         _, ext = os.path.splitext(message.path)
 
