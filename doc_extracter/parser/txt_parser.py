@@ -45,7 +45,7 @@ class Parser(BaseParser):
             for line in f:
                 page += 1
                 sections.append({
-                    "page": page,
+                    "page": str(page),
                     "context": line.strip().decode("utf-8"),
                 })
         return sections

@@ -53,7 +53,7 @@ class Parser(BaseParser):
                 origin_contents = "\n\n".join(contents)
                 text_runs.append(
                     {
-                        "page": index + 1,
+                        "page": str(index + 1),
                         "context": origin_contents,
                     }
                 )

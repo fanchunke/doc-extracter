@@ -59,7 +59,7 @@ class Parser(BaseParser):
         with pdfplumber.open(filename) as pdf:
             for index, page in enumerate(pdf.pages):
                 contents.append({
-                    "page": index + 1,
+                    "page": str(index + 1),
                     "context": page.extract_text()
                 })
         return contents
@@ -70,7 +70,7 @@ class Parser(BaseParser):
         with fitz.Document(filename) as pdf:
             for index, page in enumerate(pdf):
                 contents.append({
-                    "page": index + 1,
+                    "page": str(index + 1),
                     "context": page.get_text("text")
                 })
             if pdf.is_repaired:
@@ -93,9 +93,10 @@ class Parser(BaseParser):
         for page in PDFPage.get_pages(fp):
             interpreter.process_page(page)
             contents.append({
-                "page": index,
+                "page": str(index),
                 "context": retstr.getvalue()
             })
+            index += 1
 
         fp.close()
         device.close()

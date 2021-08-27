@@ -54,7 +54,7 @@ class Parser(BaseParser):
         with extract_msg.Message(filename) as m:
             context: bytes = ensure_bytes(m.subject) + six.b('\n\n') + ensure_bytes(m.body)
             text_runs = [{
-                "page": 1,
+                "page": "1",
                 "context": context.decode("utf-8"),
             }]
         return text_runs

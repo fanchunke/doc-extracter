@@ -43,7 +43,7 @@ class Parser(BaseParser):
             document = docx.Document(f)
             for i, paragraph in enumerate(document.paragraphs):
                 if paragraph.text:
-                    section.append({"page": i+1, "context": paragraph.text})
+                    section.append({"page": str(i+1), "context": paragraph.text})
 
             # 处理表格
             table_data = []
@@ -51,5 +51,5 @@ class Parser(BaseParser):
                 for row in table.rows:
                     table_data.extend([cell.text for cell in row.cells])
             if table_data:
-                section.append({"page": 1, "context": "\n".join(table_data)})
+                section.append({"page": "1", "context": "\n".join(table_data)})
         return section
