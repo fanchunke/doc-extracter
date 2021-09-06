@@ -12,6 +12,7 @@ import os
 import pathlib
 import time
 from typing import AsyncGenerator
+from urllib.parse import urlparse
 
 import six
 
@@ -46,3 +47,10 @@ def ensure_string(string):
     if isinstance(string, six.binary_type):
         return string.decode('utf-8')
     return string
+
+
+def is_url(s: str) -> bool:
+    r = urlparse(s)
+    if not r.scheme or not r.netloc:
+        return False
+    return True

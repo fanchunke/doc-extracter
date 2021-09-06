@@ -9,16 +9,9 @@
 import tempfile
 import urllib.request
 from typing import List
-from urllib.parse import urlparse
 
 from ..message import Message, Result, JobStatus
-
-
-def is_url(s: str) -> bool:
-    r = urlparse(s)
-    if not r.scheme or not r.netloc:
-        return False
-    return True
+from ..utils import is_url
 
 
 def ensure_extension(s: str) -> str:

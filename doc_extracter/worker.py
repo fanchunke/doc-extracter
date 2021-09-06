@@ -14,6 +14,7 @@ from .backend import Backend, HTTPBackend
 from .broker import Broker
 from .errors import UnSupportedError
 from .message import JobStatus, Message, ResultMessage, NoMoreMessage
+from .utils import is_url
 
 logger = logging.getLogger("doc-extracter")
 
@@ -42,9 +43,13 @@ class Worker(object):
                     logger.error(f"failed to run task message: {task_message}, error: {str(e)}")
                     continue
 
-                # 额外支持的特性
-                if task_message.callback:
-                    http_backend = HTTPBackend(task_message.callback)
+                # 额外支持的特性。可以在数据中定义 `callback`，或者文件下载地址支持 POST 请求，即可在解析结束后将结果回调回去。
+                if task_message.callback or is_url(task_message.path):
+                    if task_message.callback:
+                        callback = task_message.callback
+                    else:
+                        callback = task_message.path
+                    http_backend = HTTPBackend(callback)
                     try:
                         http_backend.set_result(result_message.id, result_message)
                     except Exception as e:
