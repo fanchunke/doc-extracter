@@ -8,11 +8,12 @@
 
 import logging
 import os
-from typing import List
+from typing import Dict, List
 import zipfile
 from lxml import etree
 
 import docx
+from docx2python.docx_context import get_context
 
 from .base import BaseParser
 
@@ -48,37 +49,95 @@ class Parser(BaseParser):
 
 class XMLParser(object):
 
+    w = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+    custom = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml'
+
     @classmethod
     def parse(cls, filename: str) -> List[dict]:
-        with zipfile.ZipFile(filename) as f:
-            xml_content = f.read("word/document.xml")
+        f = zipfile.ZipFile(filename)
+        context = get_context(f)
+        # 读取主文档 xml
+        document = context.get("officeDocument")
+        # 读取文档关联 xml
+        content_rels = (context.get("content_path2rels") or {}).get(document)
+
+        # 读取主文档
+        xml_content = f.read(document)
         tree = etree.fromstring(xml_content)
 
         section = []
         for index, paragraph in enumerate(cls._iterparagraphs(tree)):
-            content = [text.strip() for text in cls._itertext(paragraph) if text.strip()]
+            content = [text.strip() for text in cls._itertext(paragraph, f, content_rels) if text.strip()]
             if content:
-                section.append({"page": str(index + 1), "context": "".join(content)})
+                section.append({"page": str(index + 1), "context": " ".join(content)})
         return section
 
     @classmethod
     def _iterparagraphs(cls, my_etree):
         """Iterator to go through xml tree's text nodes"""
         for node in my_etree.iter(tag=etree.Element):
-            if cls._check_element_is(node, 'p'):
+            if cls._check_element_is(node, "p"):
                 yield node
+            elif cls._check_element_is(node, "sdt"):
+                if not cls._check_element_is(node.getparent(), "p"):
+                    yield node
 
     @classmethod
-    def _itertext(cls, my_etree):
+    def _itertext(cls, my_etree, z: zipfile.ZipFile, content_rels: List[Dict]):
         """Iterator to go through xml tree's text nodes"""
         for node in my_etree.iter(tag=etree.Element):
             if cls._check_element_is(node, 't'):
                 yield node.text
+            elif cls._check_element_is(node, 'dataBinding'):
+                yield cls._get_binding_data(node, z, content_rels)
+
+    @classmethod
+    def _iter_data_binding(cls, my_etree, z: zipfile.ZipFile, content_rels: List[Dict]):
+        """Iterator to go through xml tree's dataBinding nodes"""
+        for node in my_etree.iter(tag=etree.Element):
+            if cls._check_element_is(node, 'dataBinding'):
+                yield cls._get_binding_data(node, z, content_rels)
 
     @classmethod
     def _check_element_is(cls, element, type_char):
-        word_schema = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
-        return element.tag == '{%s}%s' % (word_schema, type_char)
+        return element.tag == '{%s}%s' % (cls.w, type_char)
+
+    @classmethod
+    def _get_binding_data(cls, element, z: zipfile.ZipFile, content_rels: List[Dict]):
+        """Extract custom binding data"""
+        if element.tag != '{%s}dataBinding' % cls.w:
+            return ""
+        
+        xpath_key = '{%s}xpath' % cls.w
+        xpath = element.attrib.get(xpath_key)
+
+        mapping_key = '{%s}prefixMappings' % cls.w
+        mapping_str = element.attrib.get(mapping_key)
+        mappings = {}
+        for item in mapping_str.split():
+            tmp = item.split("=")
+            if len(tmp) == 2:
+                key, value  = tmp
+                key = key.split(":")[-1]
+                value = value.replace("'", "").replace('"', "")
+                mappings[key] = value
+
+        result = ""
+        for rel in content_rels:
+            if rel.get("Type") == cls.custom:
+                try:
+                    target = rel.get("Target")
+                    target = "/".join([item for item in target.split("/") if item and item not in [".", ".."]])
+                    node = etree.fromstring(z.read(target))
+                    els = node.xpath(xpath, namespaces=mappings)
+                    for el in els:
+                        result += el.text
+                    if els:
+                        break
+                except Exception as e:
+                    logger.error(f"docx get data binding failed: {str(e)}")
+                    continue
+        return result
 
 
 class CustomParser(object):
