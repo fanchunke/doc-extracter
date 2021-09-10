@@ -16,6 +16,11 @@ from .base import BaseParser
 
 _FILENAME_SUFFIX = "_parser"
 
+# Dictionary structure for synonymous file extension types
+EXTENSION_SYNONYMS = {
+    ".xlsx": ".xls"
+}
+
 
 def process(
     message: Message,
@@ -33,6 +38,8 @@ def process(
         ext = f".{ext}"
     ext = ext.lower()
 
+    # check the EXTENSION_SYNONYMS dictionary
+    ext = EXTENSION_SYNONYMS.get(ext, ext)
     rel_module = ext + _FILENAME_SUFFIX
     try:
         filetype_module = importlib.import_module(

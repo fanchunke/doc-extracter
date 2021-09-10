@@ -31,7 +31,7 @@ def ensure_bytes(string):
 
 class Parser(BaseParser):
 
-    supported_extension = '.msg'
+    supported_extension = ['.msg']
 
     @classmethod
     def parse(cls, filename: str) -> List[dict]:

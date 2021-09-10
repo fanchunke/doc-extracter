@@ -22,7 +22,7 @@ logger = logging.getLogger("doc-extracter")
 
 class Parser(BaseParser):
 
-    supported_extension = '.docx'
+    supported_extension = ['.docx']
 
     @classmethod
     def parse(cls, filename: str, method="xml") -> List[dict]:

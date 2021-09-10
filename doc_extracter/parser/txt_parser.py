@@ -20,7 +20,7 @@ logger = logging.getLogger("doc-extracter")
 
 class Parser(BaseParser):
 
-    supported_extension = '.txt'
+    supported_extension = ['.txt']
 
     @classmethod
     def parse(cls, filename: str) -> List[dict]:

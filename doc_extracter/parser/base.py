@@ -20,7 +20,7 @@ def ensure_extension(s: str) -> str:
 
 class BaseParser(object):
 
-    supported_extension: str = ''
+    supported_extension: List[str] = []
 
     @classmethod
     def extract(cls, message: Message, **kwargs) -> Result:
@@ -28,7 +28,7 @@ class BaseParser(object):
         if not is_url(message.path):
             contents = cls.parse(message.path)
         else:
-            with tempfile.NamedTemporaryFile('wb', suffix=f'{cls.supported_extension}') as f:
+            with tempfile.NamedTemporaryFile('wb', suffix=f'.{ensure_extension(message.queue)}') as f:
                 cls.save_tempfile(message.path, f.name)
                 contents = cls.parse(f.name)
         result = cls.postprocess(message, contents)
@@ -36,7 +36,7 @@ class BaseParser(object):
 
     @classmethod
     def preprocess(cls, message: Message):
-        if ensure_extension(message.queue) != ensure_extension(cls.supported_extension):
+        if ensure_extension(message.queue) not in [ensure_extension(item) for item in cls.supported_extension]:
             raise Exception(f"Unsupported file: {message.path}")
 
     @staticmethod

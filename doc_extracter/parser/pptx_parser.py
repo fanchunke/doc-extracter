@@ -19,7 +19,7 @@ logger = logging.getLogger("doc-extracter")
 
 class Parser(BaseParser):
 
-    supported_extension = '.pptx'
+    supported_extension = ['.pptx']
 
     @classmethod
     def parse(cls, filename: str) -> List[dict]:

@@ -22,7 +22,7 @@ from .base import BaseParser
 
 class Parser(BaseParser):
 
-    supported_extension = '.pdf'
+    supported_extension = ['.pdf']
     default_method = 'PyMuPDF'
 
     @classmethod
